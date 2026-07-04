@@ -1,0 +1,17 @@
+{
+  "name": "codingboyz-command-finder",
+  "version": "1.0.0",
+  "description": "Discord Bot to find methods via DMs with Admin Dashboard",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dashboard": "node dashboard.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2"
+  }
+}
