@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodingBoyz Admin Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1e1e2e; color: #fff; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: #2b2b3d; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h1, h2 { color: #7289da; }
+        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: none; border-radius: 4px; background: #1e1e2e; color: #fff; box-sizing: border-box; }
+        button { background: #7289da; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #5b6eae; }
+        .method-card { background: #1e1e2e; padding: 15px; margin-top: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .actions button { background: #e74c3c; margin-left: 10px; }
+        .error { color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CodingBoyz Command Finder</h1>
+        
+        <% if (!loggedIn) { %>
+            <h2>Admin Login</h2>
+            <% if (error) { %> <p class="error"><%= error %></p> <% } %>
+            <form action="/login" method="POST">
+                <input type="password" name="password" placeholder="Enter Dashboard Password" required>
+                <button type="submit">Login</button>
+            </form>
+        <% } else { %>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Dashboard</h2>
+                <a href="/logout"><button>Logout</button></a>
+            </div>
+            
+            <h3>Add New Method</h3>
+            <form action="/add-method" method="POST">
+                <input type="text" name="name" placeholder="Method Name (e.g., Javascript Loop)" required>
+                <textarea name="summary" rows="4" placeholder="Full summary/code of the method..." required></textarea>
+                <button type="submit">Save Method</button>
+            </form>
+
+            <h3 style="margin-top: 30px;">Saved Methods</h3>
+            <% if (Object.keys(methods).length === 0) { %>
+                <p>No methods added yet.</p>
+            <% } else { %>
+                <% for (let [key, value] of Object.entries(methods)) { %>
+                    <div class="method-card">
+                        <div>
+                            <strong><%= key %></strong>
+                            <p style="white-space: pre-wrap; margin-top: 5px; font-size: 14px; color: #ccc;"><%= value %></p>
+                        </div>
+                        <div class="actions">
+                            <form action="/delete-method" method="POST" onsubmit="return confirm('Delete this method?');">
+                                <input type="hidden" name="name" value="<%= key %>">
+                                <button type="submit">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                <% } %>
+            <% } %>
+        <% } %>
+    </div>
+</body>
+</html>
