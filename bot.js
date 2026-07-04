@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require('discord.js');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,6 +16,7 @@ function saveMethods(data) {
     fs.writeFileSync(METHODS_FILE, JSON.stringify(data, null, 2));
 }
 
+// Define Slash Commands
 const commands = [
     new SlashCommandBuilder()
         .setName('add')
@@ -32,6 +34,7 @@ const commands = [
         .setDescription('Get help and guide for CodingBoyz Command Finder')
 ].map(cmd => cmd.toJSON());
 
+// Register Commands on Startup
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 (async () => {
     try {
@@ -43,25 +46,41 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     }
 })();
 
+// When Bot Logs In
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}`);
+    
+    // YOUR CHANNEL ID HERE
+    const channelId = '1522230823489900571'; 
+    
+    // Send message to the channel when bot starts
+    const channel = client.channels.cache.get(channelId);
+    if (channel) {
+        channel.send("🟢 **CodingBoyz Command Finder is now online!** Type `/cmdfinder` to see how to use me.");
+    } else {
+        console.log("Could not find the channel. Ensure the bot has permission to see it.");
+    }
 });
 
+// Handle Slash Commands
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     const { commandName, options, user, member } = interaction;
 
     if (commandName === 'add') {
+        // ADMIN ONLY CHECK
         if (!member.permissions.has('Administrator')) {
             return interaction.reply({ content: "❌ Only Administrators can add methods.", ephemeral: true });
         }
+
         const name = options.getString('name');
         const summary = options.getString('summary');
         const methods = loadMethods();
         
         methods[name.toLowerCase()] = summary;
         saveMethods(methods);
+
         await interaction.reply({ content: `✅ Method **"${name}"** has been added successfully!`, ephemeral: true });
     }
 
@@ -72,6 +91,7 @@ client.on('interactionCreate', async interaction => {
         if (!methods[name]) {
             return interaction.reply({ content: `❌ Method **"${name}"** not found. Ask an admin to add it.`, ephemeral: true });
         }
+
         try {
             await user.send(`**Method: ${name}**\n\n${methods[name]}`);
             await interaction.reply({ content: "✅ Check your DMs for the method!", ephemeral: true });
@@ -97,3 +117,29 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+// ==========================================
+// DASHBOARD API TO SEND TO CHANNEL
+// ==========================================
+const dashApp = express();
+dashApp.use(express.json());
+
+dashApp.post('/send-to-channel', async (req, res) => {
+    // If no channel ID is provided in the request, use your default channel ID
+    const channelId = req.body.channelId || '1522230823489900571';
+    const { message } = req.body;
+
+    if (!message) return res.status(400).send("Message is required");
+
+    try {
+        const channel = await client.channels.fetch(channelId);
+        if (!channel) return res.status(404).send("Channel not found");
+        await channel.send(message);
+        res.send("✅ Message sent successfully to the channel!");
+    } catch (error) {
+        res.status(500).send("❌ Error sending message: " + error.message);
+    }
+});
+
+// We run this API on port 3001 so it doesn't conflict with the EJS dashboard on port 3000
+dashApp.listen(3001, () => console.log('Bot Channel API running on port 3001'));
